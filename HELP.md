@@ -15,3 +15,4 @@ These additional references should also help you:
 ### 从rancher下载的配置文件，需要先base64编码，再解码
 - 编码后存储在github : cat phiz-eks3-test.yaml | base64 -w 0 | pbcopy
 - 流水线中使用时解码：echo "${{ secrets.RANCHER_KUBECONFIG }}" | base64 -d >  ~/.kube/config
+  
