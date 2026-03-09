@@ -64,7 +64,6 @@ jobs:
         run: |
           mkdir -p ~/.kube
           # 从 GitHub Secrets 读取 Rancher 平台的 kubeconfig（base64 编码）
-          echo ${{ secrets.RANCHER_KUBECONFIG }}
           echo "${{ secrets.RANCHER_KUBECONFIG }}" > ~/.kube/config
 
       # 步骤 5: 部署应用到 Rancher 管理的 Kubernetes 集群
