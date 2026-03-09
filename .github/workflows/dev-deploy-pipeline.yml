@@ -69,8 +69,8 @@ jobs:
       - name: Deploy to Kubernetes cluster (via Rancher)
         run: |
           
-          # 查看命名空间
-          kubectl get namespaces
+          #验证连接（仅显示版本信息，不需要特殊权限）
+          kubectl version --short || kubectl version
           
           # 应用 Kubernetes 部署配置
           kubectl apply -f k8s/deployment.yaml -n namesapce-test-cicd
