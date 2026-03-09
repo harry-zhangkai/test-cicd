@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: test-cicd
-          image: ghcr.io/harry-zhangkai/test-cicd:latest
+          image: ghcr.io/harry-zhangkai/test-cicd:${IMAGE_TAG}
           ports:
             - containerPort: 8080
           env:
