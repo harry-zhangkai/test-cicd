@@ -80,7 +80,7 @@ jobs:
           
           # 更新容器镜像为新构建的版本
           kubectl set image deployment/test-cicd \
-            test-cicd=IMAGE_URL \
+            test-cicd=${{ IMAGE_URL }} \
             -n namesapce-test-cicd
           
           # 等待部署完成
