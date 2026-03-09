@@ -51,7 +51,8 @@ jobs:
           SHORT_SHA=${SHA:0:7}
           echo "SHORT_SHA=${SHORT_SHA}"
           # 输出到 GITHUB_OUTPUT
-          echo "IMAGE_TAG=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+#          echo "IMAGE_TAG=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=dev-2b278ae" >> $GITHUB_OUTPUT
 
       # 步骤 3: 安装 kubectl 工具
       - name: Setup kubectl
