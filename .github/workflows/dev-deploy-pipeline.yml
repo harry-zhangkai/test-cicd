@@ -64,7 +64,7 @@ jobs:
           username: ${{ github.actor }}         # 当前用户
           password: ${{ secrets.GITHUB_TOKEN }} # GitHub 自动提供的 token
 
-      # 步骤 6: 生成 Docker 镜像元数据（标签和标签）
+      # 步骤 6: 生成 Docker 镜像元数据（标签）
       - name: Extract metadata (tags, labels)
         id: meta                                    # 步骤 ID，供后续引用
         uses: docker/metadata-action@v5
@@ -72,7 +72,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=pr         # 基于 PR 引用生成标签
-            type=sha,prefix=main-     # 基于 commit SHA 生成标签，前缀 main-
+            type=sha,prefix=dev-,format=short      # 基于 commit SHA 生成短标签，
 
       # 步骤 7: 构建并推送 Docker 镜像
       - name: Build and push Docker image
@@ -100,7 +100,7 @@ jobs:
       # 步骤 2: 设置镜像标签为当前 commit SHA
       - name: Get image tag
         id: image_tag
-        run: echo "IMAGE_TAG=sha-${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: echo "IMAGE_TAG=dev-${github.sha:0:7}" >> $GITHUB_OUTPUT
 
       # 步骤 3: 安装 kubectl 工具
       - name: Setup kubectl
