@@ -70,14 +70,17 @@ jobs:
         run: |
           
           #验证连接（仅显示版本信息，不需要特殊权限）
-          kubectl version --short || kubectl version
+          kubectl version
           
           # 应用 Kubernetes 部署配置
           kubectl apply -f k8s/deployment.yaml -n namesapce-test-cicd
           
+          IMAGE_URL=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image_tag.outputs.IMAGE_TAG }}
+          echo "Image URL: ${IMAGE_URL}"
+          
           # 更新容器镜像为新构建的版本
           kubectl set image deployment/test-cicd \
-            test-cicd=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image_tag.outputs.IMAGE_TAG }} \
+            test-cicd=IMAGE_URL \
             -n namesapce-test-cicd
           
           # 等待部署完成
