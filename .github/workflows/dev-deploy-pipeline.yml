@@ -100,7 +100,13 @@ jobs:
       # 步骤 2: 设置镜像标签为当前 commit SHA
       - name: Get image tag
         id: image_tag
-        run: echo "IMAGE_TAG=dev-${github.sha:0:7}" >> $GITHUB_OUTPUT
+        run: |
+          # 将 GitHub 上下文变量赋值给 shell 变量
+          SHA=${{ github.sha }}
+          # 使用 shell 语法截取前 7 位
+          SHORT_SHA=${SHA:0:7}
+          # 输出到 GITHUB_OUTPUT
+          echo "IMAGE_TAG=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       # 步骤 3: 安装 kubectl 工具
       - name: Setup kubectl
