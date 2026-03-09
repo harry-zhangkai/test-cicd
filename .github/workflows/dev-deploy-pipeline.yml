@@ -6,6 +6,11 @@
 
 name: Main Deploy Pipeline
 
+# ✅ 权限定义
+permissions:
+  contents: read   # 拉取代码需要
+  packages: write  # 推送镜像到 GHCR 需要
+
 # 触发器配置
 on:
   push:
