@@ -68,8 +68,6 @@ jobs:
       # 步骤 5: 部署应用到 Rancher 管理的 Kubernetes 集群
       - name: Deploy to Kubernetes cluster (via Rancher)
         run: |
-          # 验证连接
-          kubectl cluster-info
           
           # 查看命名空间
           kubectl get namespaces
