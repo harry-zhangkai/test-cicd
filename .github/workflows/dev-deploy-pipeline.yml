@@ -63,8 +63,14 @@ jobs:
       - name: Configure kubeconfig from Rancher
         run: |
           mkdir -p ~/.kube
-          # 从 GitHub Secrets 读取 Rancher 平台的 kubeconfig（base64 编码）
-          echo "${{ secrets.RANCHER_KUBECONFIG }}" > ~/.kube/config
+          # 使用 heredoc 语法直接写入文件，避免 GitHub 屏蔽 secret
+          cat > ~/.kube/config << 'EOF'
+          ${{ secrets.RANCHER_KUBECONFIG }}
+          EOF
+          
+          # 验证文件是否创建成功
+          echo "Kubeconfig file created:"
+          head -n 3 ~/.kube/config
 
       # 步骤 5: 部署应用到 Rancher 管理的 Kubernetes 集群
       - name: Deploy to Kubernetes cluster (via Rancher)
