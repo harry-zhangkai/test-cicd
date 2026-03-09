@@ -1,5 +1,5 @@
 # GitHub Actions Workflow 配置文件
-# 文件名：.github/workflows/dev-deploy-pipeline.yml
+# 文件名：.github/workflows/namesapce-test-cicd-pipeline.yml
 #
 # 触发条件：当 main分支有代码提交（push）或合并请求（pull_request）时自动执行
 # 流程包括：构建、测试、Docker 镜像打包、通过 Rancher 部署到 K8s
@@ -75,24 +75,24 @@ jobs:
           kubectl get namespaces
           
           # 应用 Kubernetes 部署配置
-          kubectl apply -f k8s/deployment.yaml -n dev-deploy
+          kubectl apply -f k8s/deployment.yaml -n namesapce-test-cicd
           
           # 更新容器镜像为新构建的版本
           kubectl set image deployment/test-cicd \
             test-cicd=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.image_tag.outputs.IMAGE_TAG }} \
-            -n dev-deploy
+            -n namesapce-test-cicd
           
           # 等待部署完成
-          kubectl rollout status deployment/test-cicd -n dev-deploy --timeout=300s
+          kubectl rollout status deployment/test-cicd -n namesapce-test-cicd --timeout=300s
 
       # 步骤 6: 验证部署状态
       - name: Verify deployment
         run: |
           echo "=== Deployment Status ==="
-          kubectl get deployment test-cicd -n dev-deploy
+          kubectl get deployment test-cicd -n namesapce-test-cicd
           echo ""
           echo "=== Pod Status ==="
-          kubectl get pods -n dev-deploy -l app=test-cicd
+          kubectl get pods -n namesapce-test-cicd -l app=test-cicd
           echo ""
           echo "=== Service Status ==="
-          kubectl get svc -n dev-deploy
+          kubectl get svc -n namesapce-test-cicd
