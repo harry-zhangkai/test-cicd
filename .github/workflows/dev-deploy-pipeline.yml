@@ -88,6 +88,7 @@ jobs:
   # ========== 作业 2: 通过已有的 Rancher 平台部署 ==========
   deploy-with-rancher:
     name: Deploy with Rancher          # 作业显示名称
+    needs: build-image                 # 依赖关系：必须在 build-image 成功后执行
     runs-on: ubuntu-latest             # 运行环境
 
     steps:
