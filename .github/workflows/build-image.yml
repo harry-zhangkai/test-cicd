@@ -164,6 +164,7 @@ jobs:
       - name: Build Docker Image Url
         id: build_docker_image_url
         run: |
+          FULL_SHA="${ github.sha }"
           SHORT_SHA="${FULL_SHA:0:7}"
           VERSION="${{ inputs.version != '' && format('-{0}', inputs.version) || '' }}"
           echo "DOCKER_IMAGE_URL=${{ env.REGISTRY }}/${{ vars.REPOSITORY_NAME }}:${{ SHORT_SHA }}${{ VERSION }}" >> $GITHUB_ENV
