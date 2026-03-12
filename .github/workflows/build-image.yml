@@ -1,0 +1,275 @@
+# GitHub Actions Workflow 配置文件
+# 触发条件：当 main 分支有代码提交（push）或合并请求（pull_request）时自动执行
+# 流程包括：构建、测试、代码扫描、Docker 镜像打包、通过 Rancher 部署到 K8s
+
+name: Build Image
+
+# ✅ 权限定义
+permissions:
+  contents: read           # 拉取代码
+  packages: write          # 推送 Docker 镜像到 GHCR
+  pull-requests: write     # 添加 PR 评论
+  actions: read            # 读取工作流运行信息
+  checks: write            # 写入检查结果
+  statuses: write          # 写入提交状态
+
+# 触发器配置：只允许手动触发
+on:
+  workflow_dispatch:       # ← 手动触发
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - uat
+          - prod
+        default: dev
+      version:
+        description: 'Version tag (optional, max 10 chars)'
+        required: false
+        type: string
+        default: ''
+
+# 全局环境变量
+env:
+  REGISTRY: 090882153757.dkr.ecr.sa-east-1.amazonaws.com                 # Docker 镜像仓库地址
+  JAVA_VERSION: '17'                    # Java 版本
+
+# 定义作业（Jobs）
+jobs:
+  # ========== 作业 1: 代码质量扫描 ==========
+#  code-quality:
+#    name: Code Quality Scan
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: ${{ env.JAVA_VERSION }}
+#          distribution: 'temurin'
+#          cache: gradle
+#
+#      # SpotBugs - 检测代码 Bug
+#      - name: Run SpotBugs
+#        run: ./gradlew spotbugsMain spotbugsTest
+#        continue-on-error: true
+#
+#      # PMD - 代码规范检查
+#      - name: Run PMD
+#        run: ./gradlew pmdMain pmdTest
+#        continue-on-error: true
+#
+#      # 上传扫描报告
+#      - name: Upload scan results
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: code-quality-report
+#          path: |
+#            build/reports/spotbugs/
+#            build/reports/pmd/
+#
+#  # ========== 作业 2: 单元测试与覆盖率检查 ==========
+#  unit-tests:
+#    name: Unit Tests & Coverage
+#    runs-on: ubuntu-latest
+#    needs: code-quality
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: ${{ env.JAVA_VERSION }}
+#          distribution: 'temurin'
+#          cache: gradle
+#
+#      - name: Setup Gradle
+#        uses: gradle/gradle-build-action@v3
+#
+#      # 执行单元测试（build.gradle 中已配置通过率检查）
+#      - name: Run unit tests
+#        run: ./gradlew clean test check --info
+#
+#      # 上传测试报告
+#      - name: Upload test report
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: test-report
+#          path: |
+#            build/reports/tests/test/
+#            build/test-results/test/
+#
+#      # 上传覆盖率报告
+#      - name: Upload coverage report
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: coverage-report
+#          path: |
+#            build/reports/jacoco/test/
+#            build/reports/jacoco/test/html/
+
+  # ========== 作业 3: 构建 Docker 镜像 ==========
+  build-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+#    needs: [code-quality, unit-tests]
+    environment:
+      name: ${{ inputs.environment }} # 用户选择的环境变量
+      url: https://github.com/${{ github.repository }}/deployments
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: gradle
+
+      # 构建应用
+      - name: Build application
+        run: ./gradlew build -x test
+
+      # 配置 AWS 凭证
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1
+
+      # 登录到 Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 配置 Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image Url
+        id: build_docker_image_url
+        run: |
+          SHORT_SHA="${FULL_SHA:0:7}"
+          VERSION="${{ inputs.version != '' && format('-{0}', inputs.version) || '' }}"
+          echo "DOCKER_IMAGE_URL=${{ env.REGISTRY }}/${{ vars.REPOSITORY_NAME }}:${{ SHORT_SHA }}${{ VERSION }}" >> $GITHUB_ENV
+
+      # 构建并推送镜像
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64  # ← 只构建 amd64 架构
+          tags: DOCKER_IMAGE_URL
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+
+  # ========== 作业 5: 部署到 K8s ==========
+  deploy-with-rancher:
+    name: Deploy to K8s
+    runs-on: ubuntu-latest
+    needs: build-image
+    environment:
+      name: ${{ inputs.environment }} # 用户选择的环境变量
+      url: https://github.com/${{ github.repository }}/deployments
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 安装 kubectl
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      # 配置 K8s 集群连接
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.RANCHER_KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      # 验证连接
+      - name: Verify cluster connection
+        run: kubectl version
+
+      # 更新部署
+      - name: Deploy to K8s
+        run: | 
+          NAMESPACE="namesapce-test-cicd"
+          DEPLOYMENT_NAME="test-cicd"
+          CONTAINER_NAME="test-cicd"
+          IMAGE_URL="${{ steps.build_docker_image_url.outputs.DOCKER_IMAGE_URL }}"
+          
+          echo "📦 Deploying to namespace: ${NAMESPACE}"
+          echo "🏷️  Image: ${IMAGE_URL}"
+          
+          # 检查命名空间是否存在
+          if ! kubectl get namespace ${NAMESPACE} &> /dev/null; then
+            echo "⚠️  Namespace ${NAMESPACE} does not exist, creating..."
+            kubectl create namespace ${NAMESPACE}
+          fi
+          
+          # 应用部署配置
+          envsubst < k8s/deployment.yaml | kubectl apply -f - -n ${NAMESPACE}
+          
+          # 更新镜像
+          kubectl set image deployment/${DEPLOYMENT_NAME} \
+            ${CONTAINER_NAME}=${IMAGE_URL} \
+            -n ${NAMESPACE}
+          
+          # 检查旧 Pod 状态
+          echo "⏳ Checking old pods..."
+          kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT_NAME}
+          
+          # 如果有旧 Pod 卡住，强制删除
+          OLD_PODS=$(kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT_NAME} \
+            --field-selector=status.phase=Running \
+            -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true)
+          
+          if [ -n "$OLD_PODS" ]; then
+            echo "⚠️  Found old running pods, waiting for rollout..."
+            kubectl rollout restart deployment/${DEPLOYMENT_NAME} -n ${NAMESPACE}
+          fi
+          
+          # 等待部署完成（增加超时时间到 10 分钟）
+          echo "⏳ Waiting for deployment to complete..."
+          kubectl rollout status deployment/${DEPLOYMENT_NAME} \
+            -n ${NAMESPACE} \
+            --timeout=600s
+          
+          echo "✅ Deployment completed successfully!"
+
+      # 验证部署
+      - name: Verify deployment
+        run: | 
+          NAMESPACE="namesapce-test-cicd"
+          echo "=== Deployment Status ==="
+          kubectl get deployment ${DEPLOYMENT_NAME} -n ${NAMESPACE}
+          echo ""
+          echo "=== Pod Status ==="
+          kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT_NAME}
+          echo ""
+          echo "=== Service Status ==="
+          kubectl get svc -n ${NAMESPACE}
+          echo ""
+          echo "=== Recent Events ==="
+          kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | tail -20

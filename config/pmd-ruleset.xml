@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ruleset name="Custom Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>项目自定义 PMD 规则</description>
+
+    <!-- 最佳实践 -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- 排除：JUnit 测试必须包含 assert（因为 expect 就是断言） -->
+        <exclude name="JUnitTestsShouldIncludeAssert"/>
+    </rule>
+
+    <!-- 容易出错的代码 -->
+    <rule ref="category/java/errorprone.xml"/>
+
+    <!-- 设计问题 -->
+    <rule ref="category/java/design.xml">
+        <!-- 排除：Law of Demeter（方法链在测试中很常见） -->
+        <exclude name="LawOfDemeter"/>
+
+        <!-- 排除：UseUtilityClass（Spring Boot 启动类不需要） -->
+        <exclude name="UseUtilityClass"/>
+
+        <!-- 排除：LoosePackageCoupling（配置复杂且不需要） -->
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+
+    <!-- 安全问题 -->
+    <rule ref="category/java/security.xml"/>
+</ruleset>

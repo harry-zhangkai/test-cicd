@@ -2,11 +2,14 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.3'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.github.spotbugs' version '6.0.4'
+	id 'pmd'
+	id 'jacoco'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+description = 'cicd demo test'
 
 java {
 	toolchain {
@@ -27,4 +30,117 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// SpotBugs 配置（严格模式）
+spotbugs {
+	toolVersion = '4.8.3'
+	ignoreFailures = false  // false，发现问题则构建失败
+	showProgress = true
+	reportLevel = 'medium'  // low, medium, high
+}
+
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+	reports {
+		html.required = true
+	}
+}
+
+// PMD 配置
+pmd {
+	toolVersion = '6.55.0'
+	ignoreFailures = false // 是否忽略错误继续构建
+	consoleOutput = true // 是否在控制台输出违规信息
+	rulesMinimumPriority = 3  // 只报告中高优先级问题
+
+	ruleSetFiles = files("${rootDir}/config/pmd-ruleset.xml")
+}
+
+tasks.withType(Pmd).configureEach {
+	reports {
+		html.required = true
+	}
+
+	// 排除特定的文件
+	// 排除启动类
+	exclude 'com/example/demo/DemoApplication'
+	exclude '**/config/**'
+	exclude '**/test/**'
+}
+
+// JaCoCo 代码覆盖率配置
+jacoco {
+	toolVersion = '0.8.11'
+}
+// JaCoCo 测试报告
+jacocoTestReport {
+	reports {
+		html.required = true
+	}
+	// 排除启动类（通常不需要测试）
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+					'**/DemoApplication.*',
+					'**/*Application.*',
+					// 其他自动生成的代码
+					'**/generated/**',
+					'**/*_.class'
+			])
+		}))
+	}
+
+}
+// JaCoCo 覆盖率验证任务
+jacocoTestCoverageVerification {
+	dependsOn test
+	violationRules {
+		rule {
+			// 行覆盖率最低 60%
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+			// 分支覆盖率最低 60%
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+			// 方法覆盖率最低 60%
+			limit {
+				counter = 'METHOD'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+		}
+	}
+}
+
+// 让 check 任务依赖覆盖率验证
+tasks.named('check') {
+	dependsOn jacocoTestCoverageVerification
+}
+tasks.named('test') {
+	useJUnitPlatform()
+
+	// 测试通过率检查
+	afterSuite { desc, result ->
+		if (!desc.parent) {
+			def failed = result.failedTestCount
+			def total = result.testCount
+			def passRate = total > 0 ? ((total - failed) * 100.0 / total) : 100
+
+			println "\n测试结果：${total - failed}/${total} 通过 (${String.format('%.1f', passRate)}%)"
+
+			// 最多允许 10% 失败 = 至少 90% 通过
+			def maxFailures = (total * 0.1).toInteger()
+
+			if (failed > maxFailures) {
+				throw new GradleException("测试失败数 (${failed}) 超过允许的最大值 (${maxFailures})")
+			}
+		}
+	}
 }

@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Config
 clusters:
-  - name: "phiz-eks3-test"
-    cluster:
-      server: "https://rancher-test.phiz.live:8443/k8s/clusters/c-4dmlp"
-      certificate-authority-data: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUdFekNDQ\
+- name: "phiz-eks3-test"
+  cluster:
+    server: "https://rancher-test.phiz.live:8443/k8s/clusters/c-4dmlp"
+    certificate-authority-data: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUdFekNDQ\
       S91Z0F3SUJBZ0lRZlZ0UkpyUjJ1aEhiZEJZTHZGTU5wekFOQmdrcWhraUc5dzBCQVF3RkFEQ0IKa\
       URFTE1Ba0dBMVVFQmhNQ1ZWTXhFekFSQmdOVkJBZ1RDazVsZHlCS1pYSnpaWGt4RkRBU0JnTlZCQ\
       WNUQzBwbApjbk5sZVNCRGFYUjVNUjR3SEFZRFZRUUtFeFZVYUdVZ1ZWTkZVbFJTVlZOVUlFNWxkS\
@@ -106,15 +106,15 @@ clusters:
       WJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ=="
 
 users:
-  - name: "phiz-eks3-test"
-    user:
-      token: "kubeconfig-u-j5xl8s44vl:glbrvdknsk4gp22mpmzxr5wrb8q7qx6j7stq6nxvnvsc4xjb9nds6l"
+- name: "phiz-eks3-test"
+  user:
+    token: "kubeconfig-u-j5xl8jfwwl:nk8x8nhjwqkb6zhc9b6m4jlqktstvnzpfcz8vb69wznjvn2l4rqp69"
 
 
 contexts:
-  - name: "phiz-eks3-test"
-    context:
-      user: "phiz-eks3-test"
-      cluster: "phiz-eks3-test"
+- name: "phiz-eks3-test"
+  context:
+    user: "phiz-eks3-test"
+    cluster: "phiz-eks3-test"
 
 current-context: "phiz-eks3-test"
