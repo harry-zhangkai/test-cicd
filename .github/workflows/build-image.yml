@@ -187,7 +187,7 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64  # ← 只构建 amd64 架构
-          tags: ${{ env.IMAGE_URL }}
+          tags: "${{ env.IMAGE_URL }}"
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
