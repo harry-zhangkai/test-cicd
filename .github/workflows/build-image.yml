@@ -167,7 +167,7 @@ jobs:
           FULL_SHA="${{ github.sha }}"
           SHORT_SHA="${FULL_SHA:0:7}"
           VERSION="${{ inputs.version != '' && format('-{0}', inputs.version) || '' }}"
-          echo "DOCKER_IMAGE_URL=${{ env.REGISTRY }}/${{ vars.REPOSITORY_NAME }}:${{ SHORT_SHA }}${{ VERSION }}" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_URL=${{ env.REGISTRY }}/${{ vars.REPOSITORY_NAME }}:${ SHORT_SHA }${ VERSION }" >> $GITHUB_ENV
 
       # 构建并推送镜像
       - name: Build and push
