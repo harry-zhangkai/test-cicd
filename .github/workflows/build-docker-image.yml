@@ -2,7 +2,7 @@
 # 触发条件：当 main 分支有代码提交（push）或合并请求（pull_request）时自动执行
 # 流程包括：构建、测试、代码扫描、Docker 镜像打包、通过 Rancher 部署到 K8s
 
-name: Build Image
+name: Build Docker Image
 
 # ✅ 权限定义
 permissions:
@@ -121,7 +121,7 @@ jobs:
 #            build/reports/jacoco/test/html/
 
   # ========== 作业 3: 构建 Docker 镜像 ==========
-  build-image:
+  build-docker-image:
     name: Build Docker Image
     runs-on: ubuntu-latest
 #    needs: [code-quality, unit-tests]
@@ -196,7 +196,7 @@ jobs:
   deploy-with-rancher:
     name: Deploy to K8s
     runs-on: ubuntu-latest
-    needs: build-image
+    needs: build-docker-image
     environment:
       name: ${{ inputs.environment }} # 用户选择的环境变量
       url: https://github.com/${{ github.repository }}/deployments
@@ -228,8 +228,8 @@ jobs:
           NAMESPACE="namesapce-test-cicd"
           DEPLOYMENT_NAME="test-cicd"
           CONTAINER_NAME="test-cicd"
-          IMAGE_URL="${{ needs.build_image.outputs.IMAGE_URL }}"
-          IMAGE_TAG="${{ needs.build_image.outputs.IMAGE_TAG }}"
+          IMAGE_URL="${{ needs.build-docker-image.outputs.IMAGE_URL }}"
+          IMAGE_TAG="${{ needs.build-docker-image.outputs.IMAGE_TAG }}"
           
           echo "📦 Deploying to namespace: ${NAMESPACE}"
           echo "🏷️  Image: ${IMAGE_URL}"
