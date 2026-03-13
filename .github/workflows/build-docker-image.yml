@@ -228,8 +228,8 @@ jobs:
           NAMESPACE="namesapce-test-cicd"
           DEPLOYMENT_NAME="test-cicd"
           CONTAINER_NAME="test-cicd"
-          IMAGE_URL="${{ steps.build_image_url.outputs.IMAGE_URL }}"
-          IMAGE_TAG="${{ steps.build_image_url.outputs.IMAGE_TAG }}"
+          IMAGE_URL="${{ needs.build_image.outputs.IMAGE_URL }}"
+          IMAGE_TAG="${{ needs.build_image.outputs.IMAGE_TAG }}"
           
           echo "📦 Deploying to namespace: ${NAMESPACE}"
           echo "🏷️  Image: ${IMAGE_URL}"
